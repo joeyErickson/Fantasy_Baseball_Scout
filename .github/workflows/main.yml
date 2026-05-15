@@ -1,0 +1,50 @@
+name: Daily Fantasy Baseball Scout
+
+on:
+  schedule:
+    # Runs at 11:00 AM UTC (7:00 AM ET) every day
+    - cron: '0 11 * * *'
+  # Allows you to trigger the report manually from the "Actions" tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    # Crucial: Allows the action to commit the 'memory' file back to your repo
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python_version: '3.10'
+          cache: 'pip' # Speeds up subsequent runs
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install espn-api google-generativeai requests MLB-StatsAPI
+
+      - name: Run Scouting Script
+        # These secrets must be added to your GitHub Repo Settings
+        env:
+          LEAGUE_ID: ${{ secrets.LEAGUE_ID }}
+          ESPN_SWID: ${{ secrets.ESPN_SWID }}
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python scout.py
+
+      - name: Commit and Push Persistence Data
+        # This part saves the 'tracked_players.json' so the AI knows who debuted yesterday
+        run: |
+          git config --global user.name "FantasyScoutBot"
+          git config --global user.email "actions@github.com"
+          git add tracked_players.json
+          # Only commit if the file actually changed to avoid errors
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update scouting memory for $(date +'%Y-%m-%d')" && git push)
