@@ -3,7 +3,7 @@ import json
 import datetime
 import requests
 import statsapi
-import google.generativeai as genai
+from google import genai
 from espn_api.baseball import League
 
 # 1. SETUP & PERSISTENCE
@@ -110,10 +110,11 @@ def run_report():
     - Cross-reference the Hot Streaks and Power Leaders with my Free Agents. Identify one 'Deep Sleeper' on a sneaky hot streak or an unowned power source that my opponents are completely ignoring.
     - Use a sharp, professional, highly analytical scout tone. Do not mention superstars who are obviously owned.
     """
-
-    genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    response = model.generate_content(prompt)
+    client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+    response =  client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt,
+    )
     
     # Send to Discord
     webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
