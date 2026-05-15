@@ -38,7 +38,7 @@ jobs:
           ESPN_S2: ${{ secrets.ESPN_S2 }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python scout.py
+        run: python baseball_scout.py
 
       - name: Commit and Push Persistence Data
         # This part saves the 'tracked_players.json' so the AI knows who debuted yesterday
