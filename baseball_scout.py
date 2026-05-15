@@ -63,18 +63,28 @@ def get_scouting_data():
     fa_names = [p.name for p in fa_list]
 
     # D. Fetch League-Wide Hot Streaks (Last 15 Days)
-    hot_hitters = statsapi.league_leaders('weightedOnBaseAverage', statGroup='hitting', limit=10)
+    try:
+        # Standard OPS leaders (Reliable API key)
+        hot_hitters = statsapi.league_leaders('onBasePlusSlugging', statGroup='hitting', limit=15)
+    except Exception as e:
+        print(f"Error fetching hitting leaders: {e}")
+        hot_hitters = []
 
     # Get Exit Velocity Leaders (Pure Power)
     # This finds the players hitting the ball the hardest right now
-    hard_hitters = statsapi.league_leaders('avgExitVelocity', statGroup='hitting', limit=10)
+    try:
+        # Standard Home Run leaders to capture pure power
+        hard_hitters = statsapi.league_leaders('homeRuns', statGroup='hitting', limit=10)
+    except Exception as e:
+        print(f"Error fetching power leaders: {e}")
+        hard_hitters = []
     
     return {
         "yesterday_review": past_results,
         "today_debuts": upcoming_debuts,
         "hot_hitters": hot_hitters,
         "free_agents": fa_names,
-        "exit velo": hard_hitters
+        "hard_hitters": hard_hitters
     }
 
 # 3. AI ANALYSIS & DELIVERY
@@ -83,21 +93,22 @@ def run_report():
     
     # Construct the Scouting Prompt
     prompt = f"""
-    Context:  You are an elite Fantasy Baseball Scout for the current date today.
-    Objective: Help me find high-upside players to add from Free Agency BEFORE my opponents.
+    Context: We are currently in the 2026 MLB regular season. You are an elite, cutthroat Fantasy Baseball Scout.
+    Objective: Help me find high-upside players to add from Free Agency BEFORE my opponents notice them.
     
     RAW DATA:
     1. Yesterday's Rookie Results: {data['yesterday_review']}
     2. Today's Debut Pitchers: {data['today_debuts']}
-    3. MLB Hot Streaks: {data['hot_hitters']}
-    4. MY LEAGUE'S FREE AGENTS: {data['free_agents']}
+    3. MLB Hot Streaks (Recent OPS Leaders): {data['hot_hitters']}
+    4. MLB Power Leaders (Recent HR Leaders): {data['hard_hitters']}
+    5. MY LEAGUE'S FREE AGENTS: {data['free_agents']}
     
     INSTRUCTIONS:
-    - ONLY recommend players who are in my 'FREE AGENTS' list.
-    - If a hot hitter is already owned, ignore them.
-    - For yesterday's rookies, give a 'Buy' or 'Sell' verdict based on their box score.
-    - Mention one 'Deep Sleeper' that my opponents are likely ignoring.
-    - Use a sharp, professional scout tone.
+    - ONLY recommend players who are currently listed in my 'FREE AGENTS' pool. If a player is hot but already owned, completely ignore them.
+    - Look at yesterday's rookie box scores and issue a definitive 'Buy' or 'Sell' verdict on whether they are worth stashing long-term or if they were just a flash in the pan.
+    - Highlight upcoming rookie pitchers scheduled for today who are unowned, detailing their streaming viability.
+    - Cross-reference the Hot Streaks and Power Leaders with my Free Agents. Identify one 'Deep Sleeper' on a sneaky hot streak or an unowned power source that my opponents are completely ignoring.
+    - Use a sharp, professional, highly analytical scout tone. Do not mention superstars who are obviously owned.
     """
 
     genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
