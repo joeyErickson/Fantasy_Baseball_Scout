@@ -1,0 +1,4 @@
+espn-api
+google-generativeai
+requests
+MLB-StatsAPI
